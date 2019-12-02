@@ -1,0 +1,11 @@
+- data format:
+	####
+	#0-2100 (=700*(pt,eta,phi))
+	#events
+	#1
+	#2
+	#3
+	###
+
+#FILES:
+./data/events_anomalydetection.h5
