@@ -6,7 +6,9 @@ import numpy as np
 from tools import chronomat
 
 
-def createJetsWithTruth():
+def createJetsWithTruth(events_combined, nEvts):
+    leadpT = {}
+    alljets = {}
     for mytype in ['background','signal']:
         leadpT[mytype]=[]
         alljets[mytype]=[]
@@ -38,11 +40,11 @@ def createJetsWithTruth():
 #Now, let's cluster some jets!
 @chronomat
 def createJetCollections(events_combined, nEvts, truthBit=False, dataLabel="UnlabelledData"):
-    leadpT = {}
-    alljets = {}
     if truthBit:
         alljets,leadpT=createJetsWithTruth(events_combined, nEvts)
     else:
+        leadpT = {}
+        alljets = {}
         leadpT[dataLabel]=[]
         alljets[dataLabel]=[]
         for i in range(nEvts): #len(events_combined)):

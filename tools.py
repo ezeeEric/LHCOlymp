@@ -62,3 +62,25 @@ def calcMjj(alljets):
             pass
         pass
     return mjj
+
+def nJets(alljets):
+    nJets={}
+    print("here",alljets)
+    for mytype in ['background','signal']:
+        nJets[mytype]=[]
+        for evt in range(len(alljets[mytype])):
+            nJets[mytype]+=[len(alljets[mytype][evt])]
+            pass
+        pass
+    return nJets
+
+def nHadsPerJet(alljets):
+    nJets={}
+    print("here",alljets)
+    for mytype in ['background','signal']:
+        nJets[mytype]=[]
+        for evt in range(len(alljets[mytype])):
+            nJets[mytype]+=[len(alljets[mytype][evt])]
+            pass
+        pass
+    return nJets

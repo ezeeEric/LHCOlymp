@@ -6,7 +6,7 @@ import pickle
 from tools import timelogDict,chronomat
 
 from dataPreparation import createJetCollections
-from tools import calcMjj
+from tools import calcMjj,nHadPerJet
 
 def plotter(allJets, leadJet):
     #Let's make some very simple plots.
@@ -21,20 +21,21 @@ def plotter(allJets, leadJet):
     plt.savefig("leadjetpt.pdf")
     
     mjj=calcMjj()
-    fig = plt.figure()
-    ax = fig.add_subplot(1, 1, 1)
-    n,b,p = plt.hist(mjj['background'], bins=50, facecolor='r', alpha=0.2,label='background')
-    plt.hist(mjj['signal'], bins=b, facecolor='b', alpha=0.2,label='signal')
-    plt.xlabel(r'$m_{JJ}$ [GeV]')
-    plt.ylabel('Number of events')
-    plt.legend(loc='upper right')
-    plt.show()
-    plt.savefig("mjj.pdf")
+#    fig = plt.figure()
+#    ax = fig.add_subplot(1, 1, 1)
+#    n,b,p = plt.hist(mjj['background'], bins=50, facecolor='r', alpha=0.2,label='background')
+#    plt.hist(mjj['signal'], bins=b, facecolor='b', alpha=0.2,label='signal')
+#    plt.xlabel(r'$m_{JJ}$ [GeV]')
+#    plt.ylabel('Number of events')
+#    plt.legend(loc='upper right')
+#    plt.show()
+#    plt.savefig("mjj.pdf")
     return
 
 def printDSStats(allJets, leadJet):
-  print(allJets)
-  print(leadJet)
+    #    print(allJets)
+#    print(leadJet)
+    nH=nHadPerJet(allJets)
 
 @chronomat
 def main():
@@ -47,7 +48,7 @@ def main():
     events_combined = f.T
     np.shape(events_combined)
 
-    allJets,leadJet=createJetCollections(events_combined,nEvts)
+    allJets,leadJet=createJetCollections(events_combined,nEvts,truthBit=True)
    # plotter(allJets,leadJet)
     printDSStats(allJets,leadJet)    
 
