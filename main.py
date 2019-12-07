@@ -5,9 +5,9 @@ import pickle
 
 from tools import timelogDict,chronomat
 
-from dataPreparation import createJetCollections
-from tools import calcMjj,nHadPerJet
+from eventClass import EventContainer
 
+#from dataPreparation import createJetCollections
 def plotter(allJets, leadJet):
     #Let's make some very simple plots.
     fig = plt.figure()
@@ -32,38 +32,34 @@ def plotter(allJets, leadJet):
 #    plt.savefig("mjj.pdf")
     return
 
-def printDSStats(allJets, leadJet):
-    #    print(allJets)
-#    print(leadJet)
-    nH=nHadPerJet(allJets)
-
 @chronomat
-def main():
-    nEvts=10
-    fn =  './data/events_anomalydetection.h5'
-    
+def main(args=None):
+    nEvts=args.numberOfEvents
+    inFile=args.inputFile
     # Option 2: Only load the first 10k events for testing
-    df_test = pandas.read_hdf(fn, stop=nEvts)
-    f=df_test
-    events_combined = f.T
-    np.shape(events_combined)
-
-    allJets,leadJet=createJetCollections(events_combined,nEvts,truthBit=True)
-   # plotter(allJets,leadJet)
-    printDSStats(allJets,leadJet)    
-
-    #outtag="jetCollection_%s_test"%(int(nEvts))
-    #pklFile=open("./output/{0}.pkl".format(outtag),'wb')
-    #pickle.dump( allJets  , pklFile)
-    #pickle.dump( leadJet , pklFile)
+    dataFrame = pandas.read_hdf(inFile, stop=nEvts)
+    events = dataFrame.T
+    np.shape(events)
     
-    for key,val in timelogDict.items():
-      print(key,val)
+    evtContainer=EventContainer()
+    evtContainer.readEvents(events,nEvts,truthBit=args.hasTruthbit)
+    print("Read {0} events".format(evtContainer.numEvents))
+    pklFile=open(inFile.replace(".h5",".pkl"),'wb')
+    pickle.dump( evtContainer , pklFile)
+    pickle.dump( args, pklFile)
+    pklFile.close()
     return
 
 if __name__=="__main__":
-    main()
-
-
-
-
+    from argparse import ArgumentParser
+    argParser = ArgumentParser(add_help=False)
+    
+    argParser.add_argument( '-i', '--inputFile',  type=str, default="./data/events_LHCO2020_backgroundMC_Pythia.h5")
+    argParser.add_argument( '-truth',  '--hasTruthbit', action="store_true")
+    argParser.add_argument( '-nevts',  '--numberOfEvents', type=int, default=-1)
+    args = argParser.parse_args()
+    main(args)
+    
+    for key,val in timelogDict.items():
+      print(key,val)
+    pass

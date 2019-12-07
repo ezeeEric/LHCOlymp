@@ -5,7 +5,6 @@ import numpy as np
 
 from tools import chronomat
 
-
 def createJetsWithTruth(events_combined, nEvts):
     leadpT = {}
     alljets = {}
@@ -51,7 +50,10 @@ def createJetCollections(events_combined, nEvts, truthBit=False, dataLabel="Unla
             if (i%(nEvts/10)==0):
                 print(dataLabel,i)
                 pass
-            pseudojets_input = np.zeros(len([x for x in events_combined[i][::3] if x > 0]), dtype=DTYPE_PTEPM)
+            pseudojets_input = np.zeros(
+																	len([x for x in events_combined[i][::3] if x > 0]),
+ 																	dtype=DTYPE_PTEPM
+															)
             for j in range(700):
                 if (events_combined[i][j*3]>0):
                     pseudojets_input[j]['pT'] = events_combined[i][j*3]
@@ -59,9 +61,19 @@ def createJetCollections(events_combined, nEvts, truthBit=False, dataLabel="Unla
                     pseudojets_input[j]['phi'] = events_combined[i][j*3+2]
                     pass
                 pass
+
             sequence = cluster(pseudojets_input, R=1.0, p=-1)
             jets = sequence.inclusive_jets(ptmin=20)
             leadpT[dataLabel] += [jets[0].pt]
             alljets[dataLabel] += [jets]
             pass
     return alljets, leadpT
+
+
+
+
+
+
+
+
+
