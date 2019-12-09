@@ -15,7 +15,7 @@ var2 = 'dEtajj'
 var3 = 'sumPtjj'
 
 # load dataset
-in_df = pd.read_pickle("./testDF.pkl")
+in_df = pd.read_pickle("./dataExamples/testDF.pkl")
 nevt=len(in_df)
 # split into input (X) and output (Y) variables
 X = in_df.loc[:nevt-1,[var1, var2, var3]].values
@@ -27,8 +27,8 @@ def create_model():
   model = Sequential()
   model.add(Dense(32, input_dim=3, activation='relu'))
   model.add(Dropout(0.2))
-  model.add(Dense(32, input_dim=3, activation='relu'))
-  model.add(Dropout(0.2))
+#  model.add(Dense(32, input_dim=3, activation='relu'))
+#  model.add(Dropout(0.2))
   model.add(Dense(1, activation='sigmoid'))
   # Compile model
   model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
@@ -39,8 +39,8 @@ estimators.append(('standardize', StandardScaler()))
 estimators.append(('mlp', KerasClassifier(build_fn=create_model, epochs=10, batch_size=2048, verbose=0)))
 
 pipeline = Pipeline(estimators)
-kfold = StratifiedKFold(n_splits=10, shuffle=True)
+kfold = StratifiedKFold(n_splits=2, shuffle=True)
 results = cross_val_score(pipeline, X, Y, cv=kfold)
 #
-#print("Training on {0} events".format(nevt))
-#print("Efficiency: %.2f (%.2f)" % (results.mean(), results.std()))
+print("Training on {0} events".format(nevt))
+print("Efficiency: %.2f (%.2f)" % (results.mean(), results.std()))
