@@ -1,1 +1,5 @@
 # LHCOlymp
+
+Requires:
+- pyjet
+- tables

@@ -1,3 +1,4 @@
+import pandas as pd
 import numpy as np
 from pyjet import cluster,DTYPE_PTEPM
 
@@ -26,9 +27,9 @@ class EventContainer(object):
 
     def readEvents(self,events,nEvts=-1,truthBit=True):
         eventTypes=["unlabelled"] if not truthBit else ["signal","background"]
-        nEvts = len(events) if int(nEvts)<1 else nEvts
+        nEvts = len(events.T) if int(nEvts)<1 else nEvts
         for i in range(nEvts):
-            if (i%(nEvts/10)==0): print("Event: ",i)
+            if (i%(int(nEvts/10))==0): print("Event: ",i)
             jEvt=JetEvent(i)
             #create collection of all jets
             jEvt.runDefaultJetClustering(events[i],eventTypes)
@@ -42,6 +43,35 @@ class EventContainer(object):
             else:
                 print("WARNING: Event with less than 2 jets, not recorded")
         return 
+    
+    def toDataFrame(self):
+        print("Converting to dataframe")
+        #dict carrying variables of event in container to be transformed to DF
+        #define additional entries of dataframe
+        dictToFrame={
+                "evtIdx":[],
+                "isSignal":[],
+                "type":[],
+                }
+        counter=0
+        for evt in self.allEvents:
+            #        if counter>5:
+            #            break
+            dictToFrame["evtIdx"]+=[evt.idx]
+            dictToFrame["isSignal"]+=[int(evt.isSignal)]
+            dictToFrame["type"]+=[evt.type]
+            for key,item in evt.variables.items():
+                if key in dictToFrame.keys():
+                    dictToFrame[key]+=[item]
+                else:
+                    dictToFrame[key]=[item]
+            counter+=1
+
+        df=pd.DataFrame(dictToFrame)
+        return df
+
+
+
 #class object keeping all jets per event
 class JetEvent(object):
     
@@ -152,7 +182,7 @@ class JetEvent(object):
 
 if __name__=="__main__":
     import pandas
-    nEvts=10
+    nEvts=20000
     fn =  './data/events_anomalydetection.h5'
     # Option 2: Only load the first 10k events for testing
     df_test = pandas.read_hdf(fn, stop=nEvts)
@@ -164,7 +194,7 @@ if __name__=="__main__":
     evtContainer.readEvents(events,nEvts)
     print(evtContainer.numEvents)
     import pickle
-    pklFile=open("./test.pkl",'wb')
+    pklFile=open("./wtruth_20k.pkl",'wb')
     pickle.dump( evtContainer , pklFile)
 
 
