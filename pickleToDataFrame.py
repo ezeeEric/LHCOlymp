@@ -5,7 +5,7 @@ import os
 #data/events_LHCO2020_backgroundMC_Pythia.pkl
 #data/events_anomalydetection.pkl
 
-fileList=["wtruth_20k.pkl","events_LHCO2020_BlackBox1.pkl","events_LHCO2020_backgroundMC_Pythia.pkl"]
+fileList=["events_anomalydetection.pkl","events_LHCO2020_BlackBox1.pkl","events_LHCO2020_backgroundMC_Pythia.pkl"]
 
 pathPrefix="./data/"
 
