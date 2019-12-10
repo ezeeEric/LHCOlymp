@@ -18,9 +18,9 @@ on [LHCOlympics2020](https://indico.cern.ch/event/809820/page/19002-lhcolympics2
 
 - Use pyjet (fastjet) library to cluster hadrons in input files to jets
 
-..- store events with clustered jet collections in `JetEvent` class objects
-..- single jet is numpy dtype with limited, specified variables read out from FastJet::PSeudoJet object
-..- **extend this dtype to add further variables from single jet**
+  - store events with clustered jet collections in `JetEvent` class objects
+  - single jet is numpy dtype with limited, specified variables read out from FastJet::PSeudoJet object
+  - **extend this dtype to add further variables from single jet**
 
 - each event carries dict of compound variables, extending from single-jet properties
 
