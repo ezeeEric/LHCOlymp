@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from pyjet import cluster,DTYPE_PTEPM
+from tools import addSingleJetVariables
 
 #container for all events
 class EventContainer(object):
@@ -52,25 +53,36 @@ class EventContainer(object):
                 "evtIdx":[],
                 "isSignal":[],
                 "type":[],
+                "nJets":[]
                 }
         counter=0
         for evt in self.allEvents:
-            #        if counter>5:
-            #            break
+            #if counter>2:
+            #    break
             dictToFrame["evtIdx"]+=[evt.idx]
             dictToFrame["isSignal"]+=[int(evt.isSignal)]
             dictToFrame["type"]+=[evt.type]
+            dictToFrame["nJets"]+=[len(evt.allJets)]
             for key,item in evt.variables.items():
                 if key in dictToFrame.keys():
                     dictToFrame[key]+=[item]
                 else:
                     dictToFrame[key]=[item]
+            dictToFrame=addSingleJetVariables(evt.allJets,dictToFrame) 
             counter+=1
-
+        #sanity check whether all variable fields are of same length. Looks very clumsy
+        dummy=0
+        firstIt=True
+        for key,val in dictToFrame.items():
+            if firstIt:
+                dummy=len(val)
+                continue
+            else:
+                if len(val)!=dummy:
+                    raise
+            firstIt=False
         df=pd.DataFrame(dictToFrame)
         return df
-
-
 
 #class object keeping all jets per event
 class JetEvent(object):
@@ -134,9 +146,9 @@ class JetEvent(object):
             sequence = cluster(pseudojets_input, R=1.0, p=-1)
             jets = sequence.inclusive_jets(ptmin=20)
             self.allJets = self.convertJetsToDType(jets)
-            
             pass
         pass
+
     #calculate and append variables to event
     def calculateVariables(self):
         #invariant mass of leading and subleading jet
@@ -167,12 +179,10 @@ class JetEvent(object):
         from tools import vectorSumDiJetPt
         self.variables["vecSumPtjj"]=vectorSumDiJetPt(self.allJets)
         
-#* nr of hadrons in all jet, lead jet
+        self.variables["nJets"]=len(self.allJets)
+
 #* hadron content - pt sum, harder hadrons?
-#* jet multiplicity
-#* dijet mass, detajj, dphijj, drjj
-#* sum of jet pts in event
-#* jet mass of large R
+#* nr of hadrons in all jet, lead jet
 #* jet dR vs jet mass?
 #* substructure quantities? N-subjettiness, Ratio of Energy Correlation functions D2
 #* ...
