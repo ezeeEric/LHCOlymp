@@ -94,6 +94,16 @@ class JetEvent(object):
 #           print(key,getattr(dummyJet,key))
 #           pseudojet_dtype.append((key,np.float64))
     def convertJetsToDType(self,jets=None):
+        constituents_dtype  = [
+                      ('constidx', np.int),
+                      ('e', np.float64),
+                      ('eta', np.float64), 
+                      ('phi', np.float64), 
+                      ('pt', np.float64), 
+                      ('px', np.float64),
+                      ('py', np.float64),
+                      ('pz', np.float64),
+                      ] # True for signal, False for background
         pseudojet_dtype  = [
                       ('jetidx', np.int),
                       ('e', np.float64),
@@ -105,13 +115,26 @@ class JetEvent(object):
                       ('px', np.float64),
                       ('py', np.float64),
                       ('pz', np.float64),
-                      ('signal', bool)
+                      ('signal', bool),
+                      ('numConstituents', np.int),
+                      ('constituents', pseudojet_const_dtype)
                       ] # True for signal, False for background
+        
 
+        #  mt() why not implemented?
         allJetsPerEvent_dType = np.zeros((len(jets), ), dtype=pseudojet_dtype)
         jet_idx = 0
         for jet in jets:
-            allJetsPerEvent_dType[jet_idx] = (jet_idx, jet.e, jet.et, jet.eta, jet.mass, jet.phi, jet.pt, jet.px, jet.py, jet.pz, self.isSignal)
+            allConstPerJetPerEvent_dType = np.zeros((len(jet), ), dtype=pseudojet_const_dtype)
+            
+            #pt sort this? remove entries?
+            const_idx=0
+            for const in jet:
+                allConstPerJetPerEvent_dType[const_idx] = (const_idx, const.e, const.eta, const.phi, const.pt, const.px, const.py, const.pz )
+                const_idx+=1
+            allJetsPerEvent_dType[jet_idx] = (jet_idx, jet.e, jet.et, jet.eta, jet.mass, jet.phi, jet.pt, jet.px, jet.py, jet.pz, self.isSignal, len(jet), allConstPerJetPerEvent_dType)
+            import sys
+            sys.exit()
             jet_idx += 1
         return allJetsPerEvent_dType
 
@@ -194,7 +217,7 @@ if __name__=="__main__":
     evtContainer.readEvents(events,nEvts)
     print(evtContainer.numEvents)
     import pickle
-    pklFile=open("./wtruth_20k.pkl",'wb')
+    pklFile=open("./wtruth_20k_constituents.pkl",'wb')
     pickle.dump( evtContainer , pklFile)
 
 
