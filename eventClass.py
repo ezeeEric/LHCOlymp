@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from pyjet import cluster,DTYPE_PTEPM
-from tools import addSingleJetVariables
+from tools import addSingleJetVariables,addConstituentInformation
 
 #container for all events
 class EventContainer(object):
@@ -46,42 +46,33 @@ class EventContainer(object):
         return 
     
     def toDataFrame(self):
-        print("Converting to dataframe")
+        print("Converting to DataFrame")
         #dict carrying variables of event in container to be transformed to DF
         #define additional entries of dataframe
         dictToFrame={
                 "evtIdx":[],
                 "isSignal":[],
                 "type":[],
-                "nJets":[]
                 }
         counter=0
         for evt in self.allEvents:
-            #if counter>2:
+            #if counter>20:
             #    break
             dictToFrame["evtIdx"]+=[evt.idx]
             dictToFrame["isSignal"]+=[int(evt.isSignal)]
             dictToFrame["type"]+=[evt.type]
-            dictToFrame["nJets"]+=[len(evt.allJets)]
             for key,item in evt.variables.items():
                 if key in dictToFrame.keys():
                     dictToFrame[key]+=[item]
                 else:
                     dictToFrame[key]=[item]
             dictToFrame=addSingleJetVariables(evt.allJets,dictToFrame) 
+            dictToFrame=addConstituentInformation(evt.allConstituents,dictToFrame)
             counter+=1
-        #sanity check whether all variable fields are of same length. Looks very clumsy
-        dummy=0
-        firstIt=True
-        for key,val in dictToFrame.items():
-            if firstIt:
-                dummy=len(val)
-                continue
-            else:
-                if len(val)!=dummy:
-                    raise
-            firstIt=False
+      #  for key,val in dictToFrame.items():
+      #      print(key,len(val))
         df=pd.DataFrame(dictToFrame)
+      #  print(df[(df.jet_1_numConstituents<4)].filter(regex='jet_1_const_0', axis=1))
         return df
 
 #class object keeping all jets per event
@@ -90,6 +81,7 @@ class JetEvent(object):
     def __init__(self,idx=-1):
         self.idx=idx
         self.allJets=[]
+        self.allConstituents={}
         self.type=""
         self.isSignal=False
         self.variables={}
@@ -106,16 +98,6 @@ class JetEvent(object):
 #           print(key,getattr(dummyJet,key))
 #           pseudojet_dtype.append((key,np.float64))
     def convertJetsToDType(self,jets=None):
-        constituents_dtype  = [
-                      ('constidx', np.int),
-                      ('e', np.float64),
-                      ('eta', np.float64), 
-                      ('phi', np.float64), 
-                      ('pt', np.float64), 
-                      ('px', np.float64),
-                      ('py', np.float64),
-                      ('pz', np.float64),
-                      ] # True for signal, False for background
         pseudojet_dtype  = [
                       ('jetidx', np.int),
                       ('e', np.float64),
@@ -127,29 +109,40 @@ class JetEvent(object):
                       ('px', np.float64),
                       ('py', np.float64),
                       ('pz', np.float64),
-                      ('signal', bool),
                       ('numConstituents', np.int),
-                      ('constituents', pseudojet_const_dtype)
-                      ] # True for signal, False for background
+                      ('signal', bool),
+                      ]
         
 
         #  mt() why not implemented?
         allJetsPerEvent_dType = np.zeros((len(jets), ), dtype=pseudojet_dtype)
+        constituentsPerJet = {} 
         jet_idx = 0
         for jet in jets:
-            allConstPerJetPerEvent_dType = np.zeros((len(jet), ), dtype=pseudojet_const_dtype)
-            
-            #pt sort this? remove entries?
-            const_idx=0
-            for const in jet:
-                allConstPerJetPerEvent_dType[const_idx] = (const_idx, const.e, const.eta, const.phi, const.pt, const.px, const.py, const.pz )
-                const_idx+=1
-            allJetsPerEvent_dType[jet_idx] = (jet_idx, jet.e, jet.et, jet.eta, jet.mass, jet.phi, jet.pt, jet.px, jet.py, jet.pz, self.isSignal, len(jet), allConstPerJetPerEvent_dType)
-            import sys
-            sys.exit()
+            allJetsPerEvent_dType[jet_idx] = (jet_idx, jet.e, jet.et, jet.eta, jet.mass, jet.phi, jet.pt, jet.px, jet.py, jet.pz, len(jet), self.isSignal)
+            constituentsPerJet[jet_idx] = self.convertConstituentsToDType(jet)
             jet_idx += 1
-        return allJetsPerEvent_dType
-
+        return allJetsPerEvent_dType,constituentsPerJet
+    
+    def convertConstituentsToDType(self,jet=None):
+        constituents_dtype  = [
+                        ('constidx', np.int),
+                        # ('e', np.float64),
+                        ('eta', np.float64), 
+                        ('phi', np.float64), 
+                        ('pt', np.float64), 
+                        #('px', np.float64),
+                        #('py', np.float64),
+                        #('pz', np.float64),
+                      ]
+        allConstPerJetPerEvent_dType = np.zeros((len(jet), ), dtype=constituents_dtype)
+        const_idx=0
+        for const in jet:
+            allConstPerJetPerEvent_dType[const_idx] = (const_idx, const.eta, const.phi, const.pt)
+            const_idx+=1
+        # pt sorted dtype array of constituents
+        return np.sort(allConstPerJetPerEvent_dType,order='pt')[::-1]
+        
     def runDefaultJetClustering(self,event, eventTypes=[]):
         for evtType in eventTypes:
             if "signal" in evtType or "background" in evtType:
@@ -168,7 +161,7 @@ class JetEvent(object):
                 pass
             sequence = cluster(pseudojets_input, R=1.0, p=-1)
             jets = sequence.inclusive_jets(ptmin=20)
-            self.allJets = self.convertJetsToDType(jets)
+            self.allJets, self.allConstituents = self.convertJetsToDType(jets)
             pass
         pass
 
@@ -229,28 +222,3 @@ if __name__=="__main__":
     import pickle
     pklFile=open("./wtruth_20k_constituents.pkl",'wb')
     pickle.dump( evtContainer , pklFile)
-
-
-
-# from O:
-## How many total jets?
-#num_clusters = len(alljets['background']) + len(alljets['signal'])
-#
-#print(len(alljets['background']))
-#print(len(alljets['signal']))
-#num_total_jets = sum([len(x) for x in alljets['background']]) + sum([len(x) for x in alljets['signal']])
-#
-## Collect the jet data
-#jet_data = np.zeros((num_total_jets, ), dtype=pseudojet_dtype)
-#
-#cluster_idx = 0
-#jet_idx = 0
-#
-#for jet_type in ['background', 'signal']:
-#    for cluster in alljets[jet_type]:
-#        for jet in cluster:
-#            is_signal = True if jet_type == 'signal' else False
-#            jet_data[jet_idx] = (cluster_idx, jet.px, jet.py, jet.pz, jet.eta, jet.phi, jet.mass, is_signal)
-#            jet_idx += 1
-#        cluster_idx += 1
-##

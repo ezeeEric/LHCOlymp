@@ -86,5 +86,37 @@ def vectorSumAllJetPt(jets):
     py = sum([jets[i]['py'] for i in range(len(jets))])
     return sqrt(px*px+py*py)
 
+#limit to n=2 jets, otherwise need to watch out for index
+def addSingleJetVariables(jetCollection,jetDict,limit=2):
+    for jet in jetCollection:
+        if limit==0: break
+        label="jet_{0}_".format(jet["jetidx"])
+        for prop in jet.dtype.names:
+            propKey=label+prop
+            if propKey in jetDict.keys():
+                jetDict[propKey]+=[jet[prop]]
+            else:
+                jetDict[propKey]=[jet[prop]]
+        limit-=1
+    return jetDict
 
+def addConstituentInformation(jetConstituents,jetDict, origConstLimit=3,origJetLimit=2):
+    for jetIdx,constArray in jetConstituents.items():
+        if origJetLimit==0: break
+        jetLabel="jet_{0}_".format(jetIdx)
+        if len(constArray)<origConstLimit:
+            print("WARNING: {0} constituents in jet, writing {1}. Filling with items with 0.".format(len(constArray),origConstLimit))
+        for i in range(origConstLimit):
+            label=jetLabel+"const_{0}_".format(i)
+            for prop in constArray[0].dtype.names:
+                propKey=label+prop
+                const=constArray[i] if len(constArray)>i else None
+                var=0 if not const else const[prop]
+                if propKey in jetDict:
+                    jetDict[propKey]+=[var]
+                else:
+                    jetDict[propKey]=[var]
 
+        origJetLimit-=1
+
+    return jetDict
