@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from pyjet import cluster,DTYPE_PTEPM
-from tools import addSingleJetVariables,addConstituentInformation
+from tools import addSingleJetVariables,addConstituentInformation,subjettiness
 
 #container for all events
 class EventContainer(object):
@@ -69,10 +69,7 @@ class EventContainer(object):
             dictToFrame=addSingleJetVariables(evt.allJets,dictToFrame) 
             dictToFrame=addConstituentInformation(evt.allConstituents,dictToFrame)
             counter+=1
-      #  for key,val in dictToFrame.items():
-      #      print(key,len(val))
         df=pd.DataFrame(dictToFrame)
-      #  print(df[(df.jet_1_numConstituents<4)].filter(regex='jet_1_const_0', axis=1))
         return df
 
 #class object keeping all jets per event
@@ -161,10 +158,14 @@ class JetEvent(object):
                 pass
             sequence = cluster(pseudojets_input, R=1.0, p=-1)
             jets = sequence.inclusive_jets(ptmin=20)
+            self.calculateSubjettiness(jets)
             self.allJets, self.allConstituents = self.convertJetsToDType(jets)
             pass
         pass
 
+    def calculateSubjettiness(self,pJets):
+        self.variables.update(subjettiness(pJets))
+    
     #calculate and append variables to event
     def calculateVariables(self):
         #invariant mass of leading and subleading jet
@@ -194,21 +195,19 @@ class JetEvent(object):
         #vector sum pt dijets
         from tools import vectorSumDiJetPt
         self.variables["vecSumPtjj"]=vectorSumDiJetPt(self.allJets)
-        
         self.variables["nJets"]=len(self.allJets)
 
-#* hadron content - pt sum, harder hadrons?
-#* nr of hadrons in all jet, lead jet
-#* jet dR vs jet mass?
-#* substructure quantities? N-subjettiness, Ratio of Energy Correlation functions D2
+#* substructure quantities? 
+#N-subjettiness
+#https://arxiv.org/pdf/1011.2268.pdf
+#* Ratio of Energy Correlation functions D2
 #* ...
-
 
         return
 
 if __name__=="__main__":
     import pandas
-    nEvts=20000
+    nEvts=1000
     fn =  './data/events_anomalydetection.h5'
     # Option 2: Only load the first 10k events for testing
     df_test = pandas.read_hdf(fn, stop=nEvts)
@@ -220,5 +219,5 @@ if __name__=="__main__":
     evtContainer.readEvents(events,nEvts)
     print(evtContainer.numEvents)
     import pickle
-    pklFile=open("./wtruth_20k_constituents.pkl",'wb')
+    pklFile=open("./wtruth_1k_subjettiness.pkl",'wb')
     pickle.dump( evtContainer , pklFile)

@@ -86,6 +86,47 @@ def vectorSumAllJetPt(jets):
     py = sum([jets[i]['py'] for i in range(len(jets))])
     return sqrt(px*px+py*py)
 
+
+def distances(sjet, sJetList):
+    distList=[]
+    for j in sJetList:
+        if sjet==j: continue
+        dEta=abs(j.eta-sjet.eta)
+        dPhi=abs(j.phi-sjet.phi)
+        deltaR=sqrt(dEta*dEta+dPhi*dPhi)
+        distList.append(deltaR)
+    return distList
+
+def subjettiness(jets,limit=2):
+    r0=1.0 #antikt distance parameter
+    sJettinessDict={}
+    counter=0
+    for jet in jets:
+        if limit==0: break
+        #create list of subJets/constituents of jet
+        subJet_ptSort=list(jet)
+        subJet_ptSort.sort(key=lambda x:x.pt, reverse=True)
+        #pt sum all subjets
+        d0=sum([sJ.pt*r0 for sJ in subJet_ptSort])
+        sjnessPerJet={}
+        for i in range(3):
+            sJ_tau_i=subJet_ptSort[i]
+            #wPtSum=0
+            #for sJ in subJet_ptSort:
+            #    if sJ==sJ_tau_i: continue
+            #    wPtSum+=sJ.pt*min(distances(sJ_tau_i,subJet_ptSort))
+            wPtSum=sum([sJ.pt*min(distances(sJ_tau_i,subJet_ptSort)) for sJ in subJet_ptSort])
+            
+            sjnessPerJet["_tau_"+str(i+1)]=wPtSum/d0
+        for key,jness in sjnessPerJet.items():
+            sJettinessDict["jet_"+str(counter)+key]=jness
+        
+        sJettinessDict["jet_"+str(counter)+"_tau_r21"]=sjnessPerJet["_tau_2"]/sjnessPerJet["_tau_1"]
+        sJettinessDict["jet_"+str(counter)+"_tau_r32"]=sjnessPerJet["_tau_3"]/sjnessPerJet["_tau_2"]
+        limit-=1
+        counter+=1
+    return sJettinessDict
+
 #limit to n=2 jets, otherwise need to watch out for index
 def addSingleJetVariables(jetCollection,jetDict,limit=2):
     for jet in jetCollection:
