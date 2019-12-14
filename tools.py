@@ -95,6 +95,7 @@ def distances(sjet, sJetList):
         dPhi=abs(j.phi-sjet.phi)
         deltaR=sqrt(dEta*dEta+dPhi*dPhi)
         distList.append(deltaR)
+    if len(distList)<1: distList.append(0)
     return distList
 
 def subjettiness(jets,limit=2):
@@ -109,20 +110,28 @@ def subjettiness(jets,limit=2):
         #pt sum all subjets
         d0=sum([sJ.pt*r0 for sJ in subJet_ptSort])
         sjnessPerJet={}
+        nrsJets=min(3,len(jet))
+        #init necessary
         for i in range(3):
+            sjnessPerJet["_tau_"+str(i+1)]=0
+
+        for i in range(nrsJets):
             sJ_tau_i=subJet_ptSort[i]
-            #wPtSum=0
-            #for sJ in subJet_ptSort:
-            #    if sJ==sJ_tau_i: continue
-            #    wPtSum+=sJ.pt*min(distances(sJ_tau_i,subJet_ptSort))
             wPtSum=sum([sJ.pt*min(distances(sJ_tau_i,subJet_ptSort)) for sJ in subJet_ptSort])
-            
             sjnessPerJet["_tau_"+str(i+1)]=wPtSum/d0
+        
         for key,jness in sjnessPerJet.items():
             sJettinessDict["jet_"+str(counter)+key]=jness
         
-        sJettinessDict["jet_"+str(counter)+"_tau_r21"]=sjnessPerJet["_tau_2"]/sjnessPerJet["_tau_1"]
-        sJettinessDict["jet_"+str(counter)+"_tau_r32"]=sjnessPerJet["_tau_3"]/sjnessPerJet["_tau_2"]
+        if ("_tau_2" in sjnessPerJet.keys() and "_tau_1" in sjnessPerJet.keys()): 
+            sJettinessDict["jet_"+str(counter)+"_tau_r21"]=sjnessPerJet["_tau_2"]/sjnessPerJet["_tau_1"]  if sjnessPerJet["_tau_1"]>0 else 0
+        else: 
+            sJettinessDict["jet_"+str(counter)+"_tau_r21"]=0
+        
+        if ("_tau_2" in sjnessPerJet.keys() and "_tau_3" in sjnessPerJet.keys()): 
+            sJettinessDict["jet_"+str(counter)+"_tau_r32"]=sjnessPerJet["_tau_3"]/sjnessPerJet["_tau_2"] if sjnessPerJet["_tau_2"]>0 else 0
+        else: 
+            sJettinessDict["jet_"+str(counter)+"_tau_r32"]=0
         limit-=1
         counter+=1
     return sJettinessDict
