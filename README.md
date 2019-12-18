@@ -11,6 +11,44 @@ on [LHCOlympics2020](https://indico.cern.ch/event/809820/page/19002-lhcolympics2
 - keras
 
 
+## Current Dataset
+### Event Samples
+
+- 1M background events, 100k signal events with truth label:
+
+```
+events_anomalydetection.h5
+```
+
+- 1M QCD Multijet events (Pythia8)
+
+```
+events_LHCO2020_backgroundMC_Pythia
+```
+
+- 1M Data events with injected signal
+
+```
+events_LHCO2020_BlackBox1
+```
+
+
+### Anti-kt R=1.0 jet collections post-clustering
+- stored in dedicated event format
+[URL](https://cernbox.cern.ch/index.php/s/MJSWVW6I8iPRNrB)
+or
+```
+/eos/user/e/edrechsl/LHCOlympics2020/191217_antikt_1M_wSubstructure
+```
+
+### DataFrames produced from above files
+- use this if you don't want to add further variables
+[URL](https://cernbox.cern.ch/index.php/s/4m2tVBp7GDaIMY8)
+or 
+```
+/eos/user/e/edrechsl/LHCOlympics2020/dataFrames/191217_antikt_1M_wSubstructure
+```
+
 ## Analysis Flow
 
 ### Data Preparation
