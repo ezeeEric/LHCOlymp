@@ -1,18 +1,10 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# # Boosted Decision Tree
-
-# In[1]:
-
-
 import pandas as pd
 import sklearn
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.preprocessing import StandardScaler
-
-
-# In[2]:
 
 
 ## load dataset
