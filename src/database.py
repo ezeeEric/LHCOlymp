@@ -16,7 +16,7 @@ import pandas as  pd
 # local
 from src import log
 from src.decorators import cached_property
-from src.yaml_utils import Serializable
+from src.yamlUtils import Serializable
 from src.dataset import Dataset
 
 
@@ -42,7 +42,7 @@ class Database(dict):
     """
 
     def __init__(self, name='DB', dbFile=None, outDir="", version="", verbose=False, stream=sys.stdout, outExt=".h5",
-        inputPath=None, localityFeature="", numSlices=1, localityFeatureRange=(), sideBandMargin=0.3, logLevel="INFO", ):
+        inputPath=None, localityFeature="", numSlices=1, localityFeatureRange=(), sidebandMargin=0.25, logLevel="INFO", ):
         """ 
         """
 
@@ -58,7 +58,7 @@ class Database(dict):
         self.inputPath = inputPath
         self.numSlices = numSlices
         self.localityFeatureRange  = localityFeatureRange
-        self.sideBandMargin = sideBandMargin
+        self.sidebandMargin = sidebandMargin
 
         ## determine file format
         self.pathExt = None
@@ -90,7 +90,7 @@ class Database(dict):
         super(Database, self).__setitem__(name, ds)
 
     def load(self):
-        """ load the dataset from disk
+        """ load the full dataset from disk
         """
         if self.inputPath==None or os.path.isfile(self.inputPath)==False:
             raise IOError("Input is not provided!")
@@ -131,9 +131,9 @@ class Database(dict):
             parent = parent.replace("."+self.pathExt, "")
             dsName = "DATASET_SLICE_{}_FROM_{}".format(i, parent)
             dsPath = os.path.join(self.outDir, dsName+self.outExt) 
-            ds = Dataset(name=dsName, localityFeature=self.localityFeature, regionSpan=(rl, rh), path=dsPath, sideBandMargin=self.sideBandMargin)
-            print(subDframe)
+            ds = Dataset(name=dsName, localityFeature=self.localityFeature, regionSpan=[rl, rh], path=dsPath, sidebandMargin=self.sidebandMargin)
             ds.write(subDframe)
+
             self[dsName] = ds 
 
         self.modified = True

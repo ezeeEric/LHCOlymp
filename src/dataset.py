@@ -1,22 +1,30 @@
 """
 Base class for building a dataset
 """
+## stdlib
 import os, re
 
+## PyPI
 import yaml
+import numpy as np
+import pandas as pd
 
-from src.yaml_utils import Serializable
+## local
+# from src.yamlUtils import Serializable
 
+from yamlable import YamlAble, yaml_info
 
 
 ##<<--------------------------------------------------------------------------------
 ## 
 ##<<--------------------------------------------------------------------------------
-class Dataset(Serializable):
+
+@yaml_info(yaml_tag_ns="Dataset")
+class Dataset(YamlAble):
     """
     """
 
-    def __init__(self, name="DS", localityFeature=None, regionSpan=None, path=None, labelData=False, sideBandMargin=0.3):
+    def __init__(self, name="DS", localityFeature=None, regionSpan=[], path=None, labelData=False, sidebandMargin=0.25, pathExt="h5"):
         """
         Parameters
         ----------
@@ -29,6 +37,7 @@ class Dataset(Serializable):
         self.name = name
         self.localityFeature = localityFeature
         self.regionSpan = regionSpan
+        self.sidebandMargin = sidebandMargin
         self.labelData = labelData
         self.path = path        
 
@@ -40,15 +49,12 @@ class Dataset(Serializable):
             self.pathExt = match.group("ext")
 
     def __repr__(self):
-        return "(%s(name=%r, localityFeature=%r, regionSpan=%r, path=%r))"%(
-            self.__class__.__name__, self.name, self.localityFeature, self.regionSpan, self.path)
+        return ("%s(name=%r, localityFeature=%r, regionSpan=%r, sidebandMargin=%r, path=%r, pathExt=%r)")%(
+            self.__class__.__name__, self.name, self.localityFeature, self.regionSpan, self.sidebandMargin, self.path, self.pathExt
+        ) 
 
-    def info(self):
-        """
-        """
-        pass
 
-    def load(self, ftype="h5"):
+    def load(self):
         """ load the dataset from disk
         """
         if self.path==None or os.path.isfile(self.path)==False:
@@ -76,7 +82,7 @@ class Dataset(Serializable):
             dframe.to_pickle(self.path)
         else:
             raise NotImplementedError("Writing stream of %s is not yet implemented!"%self.pathExt)
-
+        
 
     def weights(self):
         """ weights for the target and sideband regions 
@@ -88,24 +94,51 @@ class Dataset(Serializable):
         """
         raise NotImplementedError
         
-    def targetRegion(self):
+    def targetRegion(self, regionLabelName="RegionLabel"):
         """ get the target region ( if labeled data the class with the smaller number of data points) with slice number sliceNum
         """
+        dataFrame = self.load()
+        span = self.regionSpan[1] - self.regionSpan[0]
 
-        pass
+        rl = self.regionSpan[0] + span*self.sidebandMargin
+        rh = self.regionSpan[1] - span*self.sidebandMargin
 
-    def getSidebandRegion(self, sliceNum):
+        targetDframe = dataFrame.loc[((rl <= dataFrame[self.localityFeature]) & (dataFrame[self.localityFeature] <= rh))].copy(deep=True)
+        ## release memory
+        del dataFrame
+
+        colSize = targetDframe.shape[0]
+        targetDframe[regionLabelName] = np.ones(colSize)
+
+        return targetDframe 
+
+    def sidebandRegion(self, regionLabelName="RegionLabel"):
         """ get the sideband region (usually around the target region with some margins) 
         """
-        raise NotImplementedError
+        rl, rh = self.regionSpan[0], self.regionSpan[1]        
+        span = self.regionSpan[1] - self.regionSpan[0]
+        r1 = self.regionSpan[0] + span*self.sidebandMargin
+        r2 = self.regionSpan[1] - span*self.sidebandMargin
+
+        dataFrame = self.load()
+
+        mask = ((rl <= dataFrame[self.localityFeature]) & (dataFrame[self.localityFeature]<= r1)\
+            |(r2 <= dataFrame[self.localityFeature]) & (dataFrame[self.localityFeature] <= rh))
+        
+        sidebandDframe = dataFrame[mask].copy(deep=True)
+        ## release memory
+        del dataFrame
+
+        colSize = sidebandDframe.shape[0]
+        sidebandDframe[regionLabelName] = np.zeros(colSize)
+
+
+        return sidebandDframe
 
     def splitTrainValData(self, valFrac=0.2):
         """ keep a fraction of valFrac for optimizing models.
         """
         raise NotImplementedError
-
-    def __repr__(self):
-        pass
 
 
 
@@ -124,4 +157,4 @@ def datasetConstructor(loader, node):
                   (kwargs['name'], fields))
         raise
 
-yaml.add_constructor(u'!Dataset', datasetConstructor)
+# yaml.add_constructor(u'!Dataset', datasetConstructor)
